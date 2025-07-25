@@ -1,0 +1,166 @@
+<!-- 請確保 bootstrap.min.css 和 bootstrap.min.js 已放置於同一 folder -->
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <title>NMR 計算器</title>
+  <link href="bootstrap.min.css" rel="stylesheet">
+  <script src="bootstrap.min.js"></script>
+  <style>
+    body { padding: 30px; background: #f0f2f5; }
+    .container { max-width: 960px; margin: auto; }
+    .nmr-good { background-color: #d4edda; }
+    .nmr-warning { background-color: #f8d7da; }
+    .asset-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .asset-name {
+      flex: 1.5;
+      font-weight: bold;
+    }
+    .asset-row .form-control,
+    .asset-row .form-select {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3 class="mb-4">📊 HSBC NMR 計算器</h3>
+
+    <!-- 計算區塊 -->
+    <div class="mb-3">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">貸款金額</label>
+          <input type="number" class="form-control" id="loanAmount" value="650000">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">利率（年 %）</label>
+          <input type="number" class="form-control" id="interestRate" value="2">
+        </div>
+      </div>
+      <button class="btn btn-primary mt-3" onclick="calculateNMR()">💡 計算 NMR</button>
+      <button class="btn btn-secondary mt-3 ms-2" onclick="location.reload()">🔄 Reset</button>
+
+      <div class="mt-3" id="resultsSection"></div>
+    </div>
+
+    <!-- 資產區塊 -->
+    <h5 class="mt-4 mb-3">📦 抵押資產設定</h5>
+    <div id="assetsSection"></div>
+  </div>
+
+  <script>
+    const assetTypes = [
+      { name: "港元定期存款", ratio: 100, value: 0 },
+      { name: "債券", ratio: 95, value: 0 },
+      { name: "單位信託基金", ratio: 90, value: 0 },
+      { name: "外幣儲蓄及定期存款", ratio: 85, value: 0 },
+      { name: "港股及美股、於香港及美國交易所買賣基金", ratio: 70, value: 0 },
+      { name: "保本投資存款", ratio: 70, value: 0 },
+      { name: "高息投資存款", ratio: 70, value: 0 },
+      { name: "存款證", ratio: 70, value: 0 }
+    ];
+
+    function createDropdown(id) {
+      const select = document.createElement("select");
+      select.className = "form-select";
+      select.id = id;
+
+      for (let i = -100; i <= 100; i += 5) {
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = `${i > 0 ? '+' : ''}${i}%`;
+        if (i === 0) option.selected = true;
+        select.appendChild(option);
+      }
+      return select;
+    }
+
+    function renderAssets() {
+      const section = document.getElementById("assetsSection");
+      section.innerHTML = "";
+
+      // 加入 Header 行
+      const headerRow = document.createElement("div");
+      headerRow.className = "asset-row fw-bold";
+      headerRow.innerHTML = `
+        <div class="asset-name">資產名稱</div>
+        <input class="form-control" disabled value="資產價值">
+        <select class="form-select" disabled><option>變化 (%)</option></select>
+      `;
+      section.appendChild(headerRow);
+
+      assetTypes.forEach((asset, idx) => {
+        const row = document.createElement("div");
+        row.className = "asset-row";
+
+        const name = document.createElement("div");
+        name.className = "asset-name";
+        name.textContent = `${asset.name}（成數 ${asset.ratio}%）`;
+
+        const valueInput = document.createElement("input");
+        valueInput.type = "number";
+        valueInput.className = "form-control";
+        valueInput.id = `assetValue${idx}`;
+        valueInput.value = asset.value;
+
+        const changeSelect = createDropdown(`change${idx}`);
+
+        row.appendChild(name);
+        row.appendChild(valueInput);
+        row.appendChild(changeSelect);
+        section.appendChild(row);
+      });
+    }
+
+    function calculateNMR() {
+      const loan = Number(document.getElementById("loanAmount").value);
+      const rate = Number(document.getElementById("interestRate").value);
+      const interest = loan * rate / 100;
+
+      let totalMarketValue = 0;
+      let marginValue = 0;
+
+      assetTypes.forEach((asset, idx) => {
+        const baseValue = Number(document.getElementById(`assetValue${idx}`).value);
+        const change = Number(document.getElementById(`change${idx}`).value);
+        const newValue = baseValue * (1 + change / 100);
+        totalMarketValue += newValue;
+        marginValue += newValue * (asset.ratio / 100);
+      });
+
+      const availableMargin = totalMarketValue - loan - interest;
+      const requiredMargin = totalMarketValue - marginValue;
+      const nmr = (availableMargin / requiredMargin) * 100;
+      const displayClass = nmr >= 100 ? "nmr-good" : "nmr-warning";
+
+      document.getElementById("resultsSection").innerHTML = `
+        <div class="card ${displayClass}">
+          <div class="card-body">
+            <h6 class="card-title">📈 計算結果</h6>
+            <p>
+              可用孖展 = 市值 HKD ${totalMarketValue.toLocaleString(undefined,{minimumFractionDigits:2})}
+              − 貸款 HKD ${loan.toLocaleString(undefined,{minimumFractionDigits:2})}
+              − 利息 HKD ${interest.toLocaleString(undefined,{minimumFractionDigits:2})}
+              = <strong>HKD ${availableMargin.toLocaleString(undefined,{minimumFractionDigits:2})}</strong><br><br>
+
+              規定孖展 = 市值 HKD ${totalMarketValue.toLocaleString(undefined,{minimumFractionDigits:2})}
+              − 抵押品價值 HKD ${marginValue.toLocaleString(undefined,{minimumFractionDigits:2})}
+              = <strong>HKD ${requiredMargin.toLocaleString(undefined,{minimumFractionDigits:2})}</strong><br><br>
+
+              🔍 <strong>淨孖展比率 (NMR) = 可用孖展 ÷ 規定孖展 = ${nmr.toFixed(2)}%</strong>
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    renderAssets();
+  </script>
+</body>
+</html>
