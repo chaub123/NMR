@@ -122,6 +122,7 @@
     function calculateNMR() {
       const loan = Number(document.getElementById("loanAmount").value);
       const rate = Number(document.getElementById("interestRate").value);
+      const interest = loan * rate / 100 / 12;
 
       let totalMarketValue = 0;
       let marginValue = 0;
@@ -153,6 +154,8 @@
               = <strong>HKD ${requiredMargin.toLocaleString(undefined,{minimumFractionDigits:2})}</strong><br><br>
 
               🔍 <strong>淨孖展比率 (NMR) = 可用孖展 ÷ 規定孖展 = ${nmr.toFixed(2)}%</strong>
+
+              🔍 <strong>當月利息支出 = ${interest.toFixed(2)}%</strong>
             </p>
           </div>
         </div>
@@ -163,5 +166,6 @@
   </script>
 </body>
 </html>
+
 
 
