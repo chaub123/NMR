@@ -122,7 +122,6 @@
     function calculateNMR() {
       const loan = Number(document.getElementById("loanAmount").value);
       const rate = Number(document.getElementById("interestRate").value);
-      const interest = loan * rate / 100;
 
       let totalMarketValue = 0;
       let marginValue = 0;
@@ -135,7 +134,7 @@
         marginValue += newValue * (asset.ratio / 100);
       });
 
-      const availableMargin = totalMarketValue - loan - interest;
+      const availableMargin = totalMarketValue - loan;
       const requiredMargin = totalMarketValue - marginValue;
       const nmr = (availableMargin / requiredMargin) * 100;
       const displayClass = nmr >= 100 ? "nmr-good" : "nmr-warning";
@@ -147,7 +146,6 @@
             <p>
               可用孖展 = 市值 HKD ${totalMarketValue.toLocaleString(undefined,{minimumFractionDigits:2})}
               − 貸款 HKD ${loan.toLocaleString(undefined,{minimumFractionDigits:2})}
-              − 利息 HKD ${interest.toLocaleString(undefined,{minimumFractionDigits:2})}
               = <strong>HKD ${availableMargin.toLocaleString(undefined,{minimumFractionDigits:2})}</strong><br><br>
 
               規定孖展 = 市值 HKD ${totalMarketValue.toLocaleString(undefined,{minimumFractionDigits:2})}
@@ -165,4 +163,5 @@
   </script>
 </body>
 </html>
+
 
